@@ -16,3 +16,7 @@ add the driver of lp55231 led driver.
 
 1)add the spi core
 2)add the spi driver of stm32f1
+
+/*20180111*/
+
+添加25aa256（spi接口EEPROM）驱动程序。
