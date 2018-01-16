@@ -2,100 +2,16 @@
  * File      : i2c_bitops.c
  * 
  * This file is part of simulative i2c
- * COPYRIGHT (C) 2016
+ * COPYRIGHT (C) 2014 
  *
  * Change Logs:
  * Date           Author       Notes
  * 2016-06-10     Acuity      first version.
  * 2017-02-20     Acuity			add i2c_bus device.
  */
- 
 #include "i2c_bitops.h"
 
-/*****************************************************
- **									stm32 i2c1 driver
- *****************************************************/
- 
-//i2c1 device
-struct ops_i2c_dev i2c1_dev;  
-
-//i2c1 diver
-static void gpio_set_sda(int8_t state)
-{
-    if (state)
-    {
-				I2C1_SDA_PORT->BSRR = I2C1_SDA_PIN;
-    }
-    else
-    {
-				I2C1_SDA_PORT->BRR = I2C1_SDA_PIN;
-    }
-}
-
-static void gpio_set_scl(int8_t state)
-{
-    if (state)
-    {
-				I2C1_SCL_PORT->BSRR = I2C1_SCL_PIN;
-    }
-    else
-    {
-				I2C1_SCL_PORT->BRR = I2C1_SCL_PIN;
-    }
-}
-
-static int8_t gpio_get_sda(void)
-{
-    return (I2C1_SDA_PORT->IDR & I2C1_SDA_PIN);
-}
-
-static int8_t gpio_get_scl()
-{
-    return (I2C1_SCL_PORT->IDR & I2C1_SCL_PIN);
-}
-
-static void gpio_delayus(uint32_t us)
-{
-#if 0  //不用外部延时时开启这个！！
-    volatile int32_t i;
-	
-    for (; us > 0; us--)
-    {
-        i = 30;  //mini 17
-        while(i--);
-    }
-#else
-		Delayus(us);
-#endif
-}
-
-//初始化i2c驱动
-void i2c_bitops_bus_init(void)
-{
-		GPIO_InitTypeDef GPIO_InitStructure;										
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);		
-
-		GPIO_InitStructure.GPIO_Pin = I2C1_SDA_PIN | I2C1_SCL_PIN;//配置IIC端口
-  	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;	   			//开漏输出
-  	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;	   		
-  	GPIO_Init(I2C1_SDA_PORT, &GPIO_InitStructure);						//SDA和SCL同一端口组(GPIOB)			   				
-		I2C1_SDA_PORT->BSRR = I2C1_SDA_PIN;												//空闲拉高总线
-		I2C1_SCL_PORT->BSRR = I2C1_SCL_PIN;
-	
-		//device init
-		i2c1_dev.set_sda = gpio_set_sda;
-		i2c1_dev.get_sda = gpio_get_sda;
-		i2c1_dev.set_scl = gpio_set_scl;
-		i2c1_dev.get_scl = gpio_get_scl;
-		i2c1_dev.delayus = gpio_delayus;
-}
-/**************************************************************
- **									stm32 i2c1 driver end
- *************************************************************/
-
-/*************************************************************
- **												模拟i2c封装
-**************************************************************/
+/********************simulate i2c start*******************/
 //产生i2c起始信号
 static void i2c_bitops_start(struct ops_i2c_dev *i2c_bus)
 {
@@ -126,7 +42,7 @@ static void i2c_bitops_stop(struct ops_i2c_dev *i2c_bus)
 		i2c_bus->delayus(5);							   	
 }
 
-//等待应答信号到来 1，接收应答失败 0，接收应答成功
+//等待应答信号到来 1，接收应答失败    0，接收应答成功
 static char i2c_bitops_wait_ack(struct ops_i2c_dev *i2c_bus)
 {
 		char  ack = 1;
@@ -294,7 +210,7 @@ static unsigned long i2c_bitops_bus_write(struct ops_i2c_dev *i2c_bus,struct i2c
 				else 
 						return 0;
 		}
-		return bytes;		//成功返回写字节数
+		return bytes;		//return write bytes
 }
 
 //i2c bus R
@@ -375,3 +291,4 @@ out:
 		
 		return ret;
 }
+/********************simulate i2c end*******************/
