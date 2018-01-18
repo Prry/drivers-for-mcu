@@ -1,4 +1,19 @@
-#include "main.h"
+/*
+ * File      : lm75a.c
+ * 
+ * This file is part of lm75a driver.
+ * COPYRIGHT (C) 2016-
+ *
+ * Depend on:
+ * i2c_core.c,i2c_hw.c
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2017-07-27     Acuity      first version.
+ */
+#include "i2c_core.h"
+#include "i2c_hw.h"
+#include "lm75a.h"
 
 //read lm75a register
 static char lm75a_read_reg(u8 read_addr,u8 *read_buff,u8 read_size)
@@ -14,7 +29,7 @@ static char lm75a_read_reg(u8 read_addr,u8 *read_buff,u8 read_size)
 		lm75a_msg[1].flags = I2C_BUS_RD;
 		lm75a_msg[1].buff  = read_buff;
 		lm75a_msg[1].size  = read_size;
-		ret = i2c_bitops_bus_xfer(&i2c1_dev,lm75a_msg,2);
+		ret = i2c_bus_xfer(&i2c1_dev,lm75a_msg,2);
 	
 		return ret;
 }
@@ -33,7 +48,7 @@ static char lm75a_write_reg(u8 write_addr,u8 *write_buff,u8	write_size)
 		lm75a_msg[1].flags = I2C_BUS_WR | I2C_BUS_NO_START;	
 		lm75a_msg[1].buff  = write_buff;
 		lm75a_msg[1].size  = write_size;
-		ret = i2c_bitops_bus_xfer(&i2c1_dev,lm75a_msg,2);
+		ret = i2c_bus_xfer(&i2c1_dev,lm75a_msg,2);
 	
 		return ret;
 }	

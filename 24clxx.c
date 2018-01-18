@@ -11,7 +11,7 @@
  * 2017-05-09     Acuity			修改页写算法.
  *
  * Depend on:
- * i2c_bitops.c
+ * i2c_core.c,i2c_hw.c
  *
  * Note:
  * 24c04 24c08 24c16 地址为8位，超过0xff地址后，注意页的选择读写
@@ -25,7 +25,8 @@
 
 
 #if USE_24CLXX_EN
-#include "i2c_bitops.h"
+#include "i2c_core.h"
+#include "i2c_hw.h"
 #include "24clxx.h"	
 
 //eeprom/fram 参数
@@ -77,7 +78,7 @@ static void i2c_24clxx_write( u16 write_addr, char* pbuffer,u16 write_size)
 		ee24_msg[1].flags = I2C_BUS_WR  | I2C_BUS_NO_START;	//
 		ee24_msg[1].buff  = (u8*)pbuffer;
 		ee24_msg[1].size  = write_size;
-		i2c_bitops_bus_xfer(&i2c1_dev,ee24_msg,2);
+		i2c_bus_xfer(&i2c1_dev,ee24_msg,2);
 }
 
 /*******************************************************
@@ -111,7 +112,7 @@ char ee_24clxx_writebyte(u16 addr,u8 data)
 		ee24_msg[0].addr = slave_addr;
 		ee24_msg[0].flags = I2C_BUS_WR;
 		ee24_msg[0].buff  = buf;
-		i2c_bitops_bus_xfer(&i2c1_dev,ee24_msg,1);
+		i2c_bus_xfer(&i2c1_dev,ee24_msg,1);
 		
 		return 0;
 }
@@ -185,7 +186,7 @@ void ee_24clxx_readbytes(u16 read_ddr, char* pbuffer, u16 read_size)
 		ee24_msg[1].flags = I2C_BUS_RD;
 		ee24_msg[1].buff  = (u8*)pbuffer;
 		ee24_msg[1].size  = read_size;
-		i2c_bitops_bus_xfer(&i2c1_dev,ee24_msg,2);
+		i2c_bus_xfer(&i2c1_dev,ee24_msg,2);
 }
 
 //擦除EEPROM

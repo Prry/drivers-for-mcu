@@ -4,12 +4,16 @@
  * This file is part of lp55231 driver.
  * COPYRIGHT (C) 2016
  *
+ * Depend on:
+ * i2c_core.c,i2c_hw.c
+ *
  * Change Logs:
  * Date           Author       Notes
  * 2016-07-27     Acuity      first version.
  */
 #include "lp55231.h"
-#include "i2c_bitops.h"
+#include "i2c_core.h"
+#include "i2c_hw.h"
 
 #define USE_LP55231 1
 #if USE_LP55231
@@ -31,7 +35,7 @@ static char lp55231_read_reg(u8 lp55231_no,u8 read_addr,u8 *read_buff,u8 read_si
 		lp55231_msg[1].flags = I2C_BUS_RD;
 		lp55231_msg[1].buff  = read_buff;
 		lp55231_msg[1].size  = read_size;
-		ret = i2c_bitops_bus_xfer(&i2c1_dev,lp55231_msg,2);
+		ret = i2c_bus_xfer(&i2c1_dev,lp55231_msg,2);
 	
 		return ret;
 }
@@ -51,7 +55,7 @@ static char lp55231_write_reg0(u8 lp55231_no,u8 write_addr,u8	write_data)
 		lp55231_msg[0].flags = I2C_BUS_WR;
 		lp55231_msg[0].buff  = buff;
 		lp55231_msg[0].size  = 2;
-		ret = i2c_bitops_bus_xfer(&i2c1_dev,lp55231_msg,1);
+		ret = i2c_bus_xfer(&i2c1_dev,lp55231_msg,1);
 	
 		return ret;
 }	
@@ -72,7 +76,7 @@ static char lp55231_write_reg(u8 lp55231_no,u8 write_addr,u8 *write_buff,u8 writ
 		ee24_msg[1].flags = I2C_BUS_WR | I2C_BUS_NO_START;	//注意此标识
 		ee24_msg[1].buff  = write_buff;
 		ee24_msg[1].size  = write_size;
-		ret = i2c_bitops_bus_xfer(&i2c1_dev,ee24_msg,2);
+		ret = i2c_bus_xfer(&i2c1_dev,ee24_msg,2);
 	
 		return ret;
 }
