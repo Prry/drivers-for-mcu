@@ -1,8 +1,8 @@
 /*
- * File      : i2c_core.c
+ * File      : spi_hw.c
  * 
  * This file is part of spi for stm32f1xx
- * COPYRIGHT (C) 2014
+ * COPYRIGHT (C) 2016-
  *
  * Change Logs:
  * Date           Author       Notes
