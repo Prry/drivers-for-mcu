@@ -7,7 +7,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2016-12-22     Acuity      first version.
- * 2017-01-06     Acuity			Add spi bus init function.
+ * 2017-01-06     Acuity      Add spi bus init function.
  */
 #include "spi_hw.h"
 
@@ -96,7 +96,7 @@ void stm32f1xx_spi_init(struct spi_bus_device *spi0,unsigned char byte_size0,
 		GPIO_InitTypeDef GPIO_InitStructure;	
 	
 		if(spi0)
-		{	//SPI1ÅäÖÃ
+		{	//SPI1é…ç½®
 				RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 				SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 				SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
@@ -106,9 +106,9 @@ void stm32f1xx_spi_init(struct spi_bus_device *spi0,unsigned char byte_size0,
 						SPI_InitStructure.SPI_DataSize = SPI_DataSize_16b;						
 				SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
 				SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-				SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;										//Èí¼ş¿ØÖÆNSS
+				SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;										//è½¯ä»¶æ§åˆ¶NSS
 				SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;
-				SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;					//¸ßÎ»ÔÚÇ°
+				SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;					//é«˜ä½åœ¨å‰
 				SPI_InitStructure.SPI_CRCPolynomial = 7;
 				SPI_Init(SPI1, &SPI_InitStructure);
 				SPI_Cmd(SPI1, ENABLE);	
@@ -123,10 +123,10 @@ void stm32f1xx_spi_init(struct spi_bus_device *spi0,unsigned char byte_size0,
 				spi0->spi_phy			 	= SPI1;
 		}
 		if(spi1)
-		{	//SPI2ÅäÖÃ
+		{	//SPI2é…ç½®
 				RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-				SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;	//È«Ë«¹¤
-				SPI_InitStructure.SPI_Mode = SPI_Mode_Master;												//Ö÷Ä£Ê½
+				SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;	//å…¨åŒå·¥
+				SPI_InitStructure.SPI_Mode = SPI_Mode_Master;												//ä¸»æ¨¡å¼
 				if(byte_size1 <= 8)
 						SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;		
 				else
@@ -134,8 +134,8 @@ void stm32f1xx_spi_init(struct spi_bus_device *spi0,unsigned char byte_size0,
 				SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
 				SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
 				SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;					  						
-				SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8; //²¨ÌØÂÊ
-				SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;							//¸ßÎ»ÔÚÇ°
+				SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8; //æ³¢ç‰¹ç‡
+				SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;							//é«˜ä½åœ¨å‰
 				SPI_InitStructure.SPI_CRCPolynomial = 7;
 				SPI_Init(SPI2, &SPI_InitStructure);								
 				SPI_Cmd(SPI2, ENABLE);	
