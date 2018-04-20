@@ -14,9 +14,9 @@
  * note:
  *
  */
-#include	"spi_core.h"
+#include  "spi_core.h"
 #include  "spi_hw.h"
-//#include 	"spi_bitops.h"
+//#include "spi_bitops.h"
 #include  "25xx.h"
 
 #define USE_25XX_DEBUG 	1
@@ -29,47 +29,47 @@ struct 		spi_bus_device 	spi_bus1;
 static u8 ee_25xx_wait_busy(void);
 static void spi1_cs(unsigned char state)
 {
-		if (state)
-				GPIO_SetBits(GPIOB, GPIO_Pin_12);
-    else
-				GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+	if (state)
+		GPIO_SetBits(GPIOB, GPIO_Pin_12);
+   	 else
+		GPIO_ResetBits(GPIOB, GPIO_Pin_12);
 }
 
 void ee_25xx_init(void)
 {
-		GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
 		
-		//SPI2 cs
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
-		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;										
-		GPIO_Init(GPIOB, &GPIO_InitStructure); 
-		GPIO_SetBits(GPIOB, GPIO_Pin_12);
+	//SPI2 cs
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;										
+	GPIO_Init(GPIOB, &GPIO_InitStructure); 
+	GPIO_SetBits(GPIOB, GPIO_Pin_12);
 			
-		//device init
-		stm32f1xx_spi_init(0,0,&spi_bus1,8);
-		ee_25xx_spi_dev.spi_cs 	= spi1_cs;
-		ee_25xx_spi_dev.spi_bus = &spi_bus1;			
+	//device init
+	stm32f1xx_spi_init(0,0,&spi_bus1,8);
+	ee_25xx_spi_dev.spi_cs 	= spi1_cs;
+	ee_25xx_spi_dev.spi_bus = &spi_bus1;			
 }
 
 //
 void ee_25xx_write_enable(uint8_t select)
 {
-		spi_send(&ee_25xx_spi_dev,&select,1);
+	spi_send(&ee_25xx_spi_dev,&select,1);
 }
 
 //
 void ee_25xx_write_byte(uint16_t write_addr,uint8_t write_data)
 {
-		uint8_t send_buff[3];
+	uint8_t send_buff[3];
 	
-		ee_25xx_write_enable(REG_WRITE_ENABLE);
-		send_buff[0] = REG_WRITE_COMMAND;
-		send_buff[1] = (write_addr>>8)&0xff;
-		send_buff[2] = write_addr&0xff;
-		spi_send_then_send(&ee_25xx_spi_dev,send_buff,3,&write_data,1);
-		ee_25xx_write_enable(REG_WRITE_DISABLE);
+	ee_25xx_write_enable(REG_WRITE_ENABLE);
+	send_buff[0] = REG_WRITE_COMMAND;
+	send_buff[1] = (write_addr>>8)&0xff;
+	send_buff[2] = write_addr&0xff;
+	spi_send_then_send(&ee_25xx_spi_dev,send_buff,3,&write_data,1);
+	ee_25xx_write_enable(REG_WRITE_DISABLE);
 }
 
 /**
@@ -79,104 +79,104 @@ void ee_25xx_write_byte(uint16_t write_addr,uint8_t write_data)
   */
 void ee_25xx_write_page(uint16_t write_addr,uint8_t *write_page_buff,uint8_t write_size)
 {
-		uint8_t send_buff[3];
+	uint8_t send_buff[3];
 	
-		ee_25xx_write_enable(REG_WRITE_ENABLE);
-		send_buff[0] = REG_WRITE_COMMAND;
-		send_buff[1] = (write_addr>>8)&0xff;
-		send_buff[2] = write_addr&0xff;
-		spi_send_then_send(&ee_25xx_spi_dev,send_buff,3,write_page_buff,write_size);
-		ee_25xx_write_enable(REG_WRITE_DISABLE);
+	ee_25xx_write_enable(REG_WRITE_ENABLE);
+	send_buff[0] = REG_WRITE_COMMAND;
+	send_buff[1] = (write_addr>>8)&0xff;
+	send_buff[2] = write_addr&0xff;
+	spi_send_then_send(&ee_25xx_spi_dev,send_buff,3,write_page_buff,write_size);
+	ee_25xx_write_enable(REG_WRITE_DISABLE);
 }
 
 //
 void ee_25xx_write_bytes(uint16_t write_addr, uint8_t *write_buff, uint16_t write_bytes)
 {
-		uint8_t   write_current_bytes,page_offset;
-		uint16_t  write_remain,write_current_addr;
-		uint8_t 	*pbuff;
+	uint8_t   write_current_bytes,page_offset;
+	uint16_t  write_remain,write_current_addr;
+	uint8_t 	*pbuff;
 	
-		//ee_25xx_write_enable(REG_WRITE_ENABLE);
-		pbuff					= write_buff;			
-		write_remain  = write_bytes;
-		write_current_addr = write_addr;
-		while(write_remain > 0)
+	//ee_25xx_write_enable(REG_WRITE_ENABLE);
+	pbuff = write_buff;			
+	write_remain = write_bytes;
+	write_current_addr = write_addr;
+	while(write_remain > 0)
+	{
+		page_offset = write_current_addr % EE25XX_PAGE_SIZE;		//è¿žç»­é¡µå†™å¤§å°ï¼Œ25aa256ä¸º64å­—èŠ‚
+		write_current_bytes = write_remain > (EE25XX_PAGE_SIZE - page_offset) ? (EE25XX_PAGE_SIZE - page_offset) : write_remain;
+		ee_25xx_write_page(write_current_addr,pbuff, write_current_bytes);
+		write_remain  = write_remain - write_current_bytes;
+		if(write_remain > 0)
 		{
-				page_offset = write_current_addr % EE25XX_PAGE_SIZE;		//Á¬ÐøÒ³Ð´´óÐ¡£¬25aa256Îª64×Ö½Ú
-				write_current_bytes   = write_remain > (EE25XX_PAGE_SIZE - page_offset) ? (EE25XX_PAGE_SIZE - page_offset) : write_remain;
-				ee_25xx_write_page(write_current_addr,pbuff, write_current_bytes);
-				write_remain   = write_remain - write_current_bytes;
-				if(write_remain > 0)
-				{
-						pbuff = pbuff + EE25XX_PAGE_SIZE - page_offset;
-						write_current_addr  =  write_current_addr + EE25XX_PAGE_SIZE - page_offset;
-						//Delayms(5);
-						ee_25xx_wait_busy();//wait free,¸ù¾ÝcpuÊ±ÖÓ¼ÆËãÊ±¼ä
-				}
+			pbuff = pbuff + EE25XX_PAGE_SIZE - page_offset;
+			write_current_addr  =  write_current_addr + EE25XX_PAGE_SIZE - page_offset;
+			//Delayms(5);
+			ee_25xx_wait_busy();//wait free,æ ¹æ®cpuæ—¶é’Ÿè®¡ç®—æ—¶é—´
 		}
-		//ee_25xx_write_enable(REG_WRITE_DISABLE);
+	}
+	//ee_25xx_write_enable(REG_WRITE_DISABLE);
 }
 
 //
 void ee_25xx_read_bytes(uint16_t read_addr,uint8_t *read_buff,uint16_t read_bytes)
 {
-		uint8_t send_buff[3];
+	uint8_t send_buff[3];
 	
-		send_buff[0] = REG_READ_COMMAND;
-		send_buff[1] = (read_addr>>8)&0xff;
-		send_buff[2] = read_addr&0xff;
-		spi_send_then_recv(&ee_25xx_spi_dev,send_buff,3,read_buff,read_bytes);
+	send_buff[0] = REG_READ_COMMAND;
+	send_buff[1] = (read_addr>>8)&0xff;
+	send_buff[2] = read_addr&0xff;
+	spi_send_then_recv(&ee_25xx_spi_dev,send_buff,3,read_buff,read_bytes);
 }
 
 //
 void ee_25xx_write_status(uint8_t write_data)
 {
-		u8 send_buff[2];
+	u8 send_buff[2];
 	
-		send_buff[0] = REG_WRITE_STATUS;
-		send_buff[1] = write_data;
-		spi_send(&ee_25xx_spi_dev,send_buff,2);
+	send_buff[0] = REG_WRITE_STATUS;
+	send_buff[1] = write_data;
+	spi_send(&ee_25xx_spi_dev,send_buff,2);
 }
 
 //
 uint8_t ee_25xx_read_status(void)
 {
-		uint8_t read_status = 0,send_buff[1];
+	uint8_t read_status = 0,send_buff[1];
 	
-		send_buff[0] = REG_READ_STATUS;
-		spi_send_then_recv(&ee_25xx_spi_dev,send_buff,1,&read_status,1);
+	send_buff[0] = REG_READ_STATUS;
+	spi_send_then_recv(&ee_25xx_spi_dev,send_buff,1,&read_status,1);
 	
-		return read_status;
+	return read_status;
 }
 
 //
 static uint8_t ee_25xx_wait_busy(void) 
 {
-		uint32_t i;
+	uint32_t i;
 	
-		i = 0xFFFFF;
-		while (i--);
+	i = 0xFFFFF;
+	while (i--);
 		
-		return 0;
+	return 0;
 }
 
 //test
 #if USE_25XX_DEBUG
 void ee_25xx_test(void)
 {
-		uint8_t write_buff[255] = {0},read_buff[255] = {0},i;
+	uint8_t write_buff[255] = {0},read_buff[255] = {0},i;
 		
-		for(i = 0;i < 0xff;i++)
-				write_buff[i] = i;
-		ee_25xx_read_bytes(255,read_buff,255);
-		ee_25xx_write_bytes(255,write_buff,255);
-		memset(read_buff,0,255);
-		ee_25xx_read_bytes(255,read_buff,255);
-		for(i = 0;i < 0xff;i++)
-				write_buff[i] = 255-i;
-		//i=ee_25xx_read_status();
-		ee_25xx_write_bytes(255,write_buff,255);
-		ee_25xx_read_bytes(255,read_buff,255);
+	for(i = 0;i < 0xff;i++)
+		write_buff[i] = i;
+	ee_25xx_read_bytes(255,read_buff,255);
+	ee_25xx_write_bytes(255,write_buff,255);
+	memset(read_buff,0,255);
+	ee_25xx_read_bytes(255,read_buff,255);
+	for(i = 0;i < 0xff;i++)
+		write_buff[i] = 255-i;
+	//i=ee_25xx_read_status();
+	ee_25xx_write_bytes(255,write_buff,255);
+	ee_25xx_read_bytes(255,read_buff,255);
 		
 }
 #endif
