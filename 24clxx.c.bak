@@ -90,7 +90,7 @@ static void i2c_24clxx_write( u16 write_addr, char* pbuffer,u16 write_size)
 //Ð´Ò»×Ö½Ú
 char ee_24clxx_writebyte(u16 addr,u8 data)
 {
-		struct i2c_dev_message ee24_msg[1];
+		struct i2c_dev_message ee24_msg[2];
 		u8	buf[3];
 		u8  slave_addr;
 	
