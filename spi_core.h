@@ -9,23 +9,23 @@
 /*spi device struct*/
 struct spi_dev_message
 {
-    const void *send_buf;
-    void *recv_buf;
-    int 	length;
-		unsigned char cs_take    : 1;
-    unsigned char cs_release : 1;
+    const void 		*send_buf;
+    void 			*recv_buf;
+    int 			length;
+	unsigned char 	cs_take    : 1;
+    unsigned char	cs_release : 1;
 };
 
 struct spi_dev_device
 {	
-		void 	 (*spi_cs)(unsigned char state);	
-		struct spi_bus_device	*spi_bus;	
+	void 	 				(*spi_cs)(unsigned char state);	
+	struct spi_bus_device	*spi_bus;	
 };
 struct spi_bus_device
 {	
-		int 					(*spi_bus_xfer)(struct spi_dev_device *spi_bus,struct spi_dev_message *msg);
-		void					*spi_phy;
-		unsigned char data_width;
+	int 			(*spi_bus_xfer)(struct spi_dev_device *spi_bus,struct spi_dev_message *msg);
+	void			*spi_phy;
+	unsigned char 	data_width;
 };
 
 /*extern function*/

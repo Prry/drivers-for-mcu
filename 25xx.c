@@ -20,18 +20,18 @@
 #include  "25xx.h"
 
 #define USE_25XX_DEBUG 	1
-//module variable
+/*module variable*/
 #define		EE25XX_PAGE_SIZE	64					//25aa256
-struct 		spi_dev_device	ee_25xx_spi_dev;
-struct 		spi_bus_device 	spi_bus1;
+struct 		spi_dev_device		ee_25xx_spi_dev;
+struct 		spi_bus_device 		spi_bus1;
 
-//module function
+/*module function*/
 static u8 ee_25xx_wait_busy(void);
 static void spi1_cs(unsigned char state)
 {
 	if (state)
 		GPIO_SetBits(GPIOB, GPIO_Pin_12);
-   	 else
+   	else
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);
 }
 
@@ -53,13 +53,11 @@ void ee_25xx_init(void)
 	ee_25xx_spi_dev.spi_bus = &spi_bus1;			
 }
 
-//
 void ee_25xx_write_enable(uint8_t select)
 {
 	spi_send(&ee_25xx_spi_dev,&select,1);
 }
 
-//
 void ee_25xx_write_byte(uint16_t write_addr,uint8_t write_data)
 {
 	uint8_t send_buff[3];
@@ -89,7 +87,6 @@ void ee_25xx_write_page(uint16_t write_addr,uint8_t *write_page_buff,uint8_t wri
 	ee_25xx_write_enable(REG_WRITE_DISABLE);
 }
 
-//
 void ee_25xx_write_bytes(uint16_t write_addr, uint8_t *write_buff, uint16_t write_bytes)
 {
 	uint8_t   write_current_bytes,page_offset;
@@ -117,7 +114,6 @@ void ee_25xx_write_bytes(uint16_t write_addr, uint8_t *write_buff, uint16_t writ
 	//ee_25xx_write_enable(REG_WRITE_DISABLE);
 }
 
-//
 void ee_25xx_read_bytes(uint16_t read_addr,uint8_t *read_buff,uint16_t read_bytes)
 {
 	uint8_t send_buff[3];
@@ -128,7 +124,6 @@ void ee_25xx_read_bytes(uint16_t read_addr,uint8_t *read_buff,uint16_t read_byte
 	spi_send_then_recv(&ee_25xx_spi_dev,send_buff,3,read_buff,read_bytes);
 }
 
-//
 void ee_25xx_write_status(uint8_t write_data)
 {
 	u8 send_buff[2];
@@ -138,7 +133,6 @@ void ee_25xx_write_status(uint8_t write_data)
 	spi_send(&ee_25xx_spi_dev,send_buff,2);
 }
 
-//
 uint8_t ee_25xx_read_status(void)
 {
 	uint8_t read_status = 0,send_buff[1];
@@ -149,7 +143,6 @@ uint8_t ee_25xx_read_status(void)
 	return read_status;
 }
 
-//
 static uint8_t ee_25xx_wait_busy(void) 
 {
 	uint32_t i;
@@ -160,7 +153,7 @@ static uint8_t ee_25xx_wait_busy(void)
 	return 0;
 }
 
-//test
+/*test*/
 #if USE_25XX_DEBUG
 void ee_25xx_test(void)
 {

@@ -6,7 +6,7 @@
 //Ä£Äâi2cÉè±¸
 struct ops_i2c_dev
 {
-		void (*set_sda)(int8_t state);
+	void (*set_sda)(int8_t state);
     void (*set_scl)(int8_t state);
     int8_t (*get_sda)(void);
     int8_t (*get_scl)(void);

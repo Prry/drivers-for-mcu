@@ -13,9 +13,8 @@
 
 int i2c_bus_xfer(struct i2c_dev_device *dev,struct i2c_dev_message msgs[],unsigned int num)
 {
-		int size;
+    int size;
 	
-		size = dev->xfer(dev,msgs,num);
-	
-		return size;
+    size = dev->xfer(dev,msgs,num);
+    return size;
 }
