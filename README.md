@@ -1,22 +1,35 @@
-# drivers-for-mcu
-/*20171218*/
+MCU常用外设驱动程序
+=
 
-The driver for the microprocessor
-Refer to Linux and rt-thread drivers
+1.测试硬件平台
+-
+STM32F1
 
-/*20171219*/
+2.编译器
+-
+Keil、IAR
 
-add the driver of lm75a temperature sensor.
+3.源码
+-
+3.1 接口总线
 
-/*2017223*/
+总线 | 类型 | 备注
+-- | --- | ---
+I2C |	模拟I2C | 7bit地址
+SPI |	硬件SPI/模拟SPI |	支持4种类型/非标SPI
 
-add the driver of lp55231 led driver.
+3.2 外设驱动  
 
-/*20180110*/
 
-1)add the spi core
-2)add the spi driver of stm32f1
+外设 | 型号 | 原厂 | 接口 | 备注  
+--- | --- | --- | --- | --- 
+温度传感器 | LM75A	| NXP	| I2C	  
+LED恒流驱动 | LP55231 | TI | I2C  	
+EEPROM/FRAM | AT24Cxx | ATMEL | I2C  	
+EEPROM | ST25AAXX | ST | SPI  	
+ADC | AD7684 | ADI | SPI | 3线SPI    
+步进电机驱动 | TMC2660 | TRINAMIC | SPI    	
 
-/*20180111*/
-
-����25aa256��spi�ӿ�EEPROM����������
+4.更新
+-
+不定期更新！
