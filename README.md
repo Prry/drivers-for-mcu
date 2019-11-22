@@ -17,6 +17,7 @@ Keil、IAR
 -- | --- | ---
 I2C |	模拟I2C | 7bit地址
 SPI |	硬件SPI/模拟SPI |	支持4种类型/非标SPI
+Onewire | 模拟单总线 | IO模拟
 
 3.2 外设驱动  
 
@@ -28,7 +29,8 @@ LED恒流驱动 | LP55231 | TI | I2C
 EEPROM/FRAM | AT24Cxx | ATMEL | I2C  	
 EEPROM | ST25AAXX | ST | SPI  	
 ADC | AD7684 | ADI | SPI | 3线SPI    
-步进电机驱动 | TMC2660 | TRINAMIC | SPI    	
+步进电机驱动 | TMC2660 | TRINAMIC | SPI
+温度传感器 | DS18B20 | MAXIM | Onewire|       	
 
 4.更新
 -
