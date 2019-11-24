@@ -30,7 +30,8 @@ EEPROM/FRAM | AT24Cxx | ATMEL | I2C
 EEPROM | ST25AAXX | ST | SPI  	
 ADC | AD7684 | ADI | SPI | 3线SPI    
 步进电机驱动 | TMC2660 | TRINAMIC | SPI
-温度传感器 | DS18B20 | MAXIM | Onewire|       	
+温度传感器 | DS18B20 | MAXIM | Onewire|    
+DAC | AD5290 | ADI | SPI | 3线SPI   	
 
 4.更新
 -
