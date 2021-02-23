@@ -14,8 +14,4 @@ struct ops_spi_bus_device
 /* 模拟spi收发函数 */
 extern int ops_spi_bus_xfer(struct spi_dev_device *spi_bus,struct spi_dev_message *msg);
 
-/* stm32f1 模拟spi */
-extern void st_ops_spi0_init(struct ops_spi_bus_device *ops_spi_bus);
-extern void st_ops_spi1_init(struct ops_spi_bus_device *ops_spi_bus);
-
 #endif

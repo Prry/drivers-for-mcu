@@ -4,11 +4,11 @@
 
 /********************eg: stm32f1 simulate i2c start*******************/
  
-//i2c1 device
+/* i2c1 device */
 struct i2c_dev_device i2c1_dev;
 struct ops_i2c_dev ops_i2c1_dev;  
 
-//i2c1 diver
+/* i2c1 diver */
 static void gpio_set_sda(int8_t state)
 {
 	if (state)
@@ -45,12 +45,12 @@ static int8_t gpio_get_scl()
 
 static void gpio_delayus(uint32_t us)
 {
-#if 0  //不用系统延时时开启这个！！
+#if 1  /* 不用系统延时时开启这个！！*/
 	volatile int32_t i;
 	
 	for (; us > 0; us--)
 	{
-		i = 30;  //mini 17
+		i = 30;  /* mini 17 */
 		while(i--);
 	}
 #else
@@ -63,7 +63,7 @@ int ops_i2c_bus_xfer(struct i2c_dev_device *i2c_dev,struct i2c_dev_message msgs[
 	return(i2c_bitops_bus_xfer((struct ops_i2c_dev*)(i2c_dev->i2c_phy),msgs,num));
 }
 
-//初始化i2c驱动
+/* 初始化i2c驱动 */
 void stm32f1xx_i2c_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;										

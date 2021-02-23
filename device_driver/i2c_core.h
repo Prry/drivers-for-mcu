@@ -17,7 +17,7 @@ struct i2c_dev_message
     unsigned short  size;
     unsigned char   *buff;
     unsigned char   retries;
-    undinged short  speed;
+    unsigned short  speed;
 };
 
 /* i2c device */
