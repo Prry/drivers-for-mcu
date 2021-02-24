@@ -10,45 +10,57 @@
  * 2019-11-24     Acuity      first version.
  */
  
-#include "spi_hw.h"
+#include <string.h>
 #include "ad5290.h"
 
-/* ad9520驱动 */
+/* ad9520 spi device */
 static struct spi_dev_device  ad5290_spi_dev[3];
 
-/* 
-* spi总线
-* 如和其他外设共用spi总线，只需定义一处和初始化一次即可
-*/
-static struct spi_bus_device  spi_bus1;
 
-/* ad5290片选控制函 */
-static void ad5290_spi_cs0(unsigned char state)
+/* ad5290 cs function */
+static void ad5290_spi_cs0(uint8_t state)
 {
 	if (state)
+	{
 		GPIO_SetBits(GPIOC, GPIO_Pin_7);
+	}
 	else
+	{
 		GPIO_ResetBits(GPIOC, GPIO_Pin_7);
+	}
 }
-static void ad5290_spi_cs1(unsigned char state)
+static void ad5290_spi_cs1(uint8_t state)
 {
 	if (state)
+	{
 		GPIO_SetBits(GPIOC, GPIO_Pin_9);
+	}
 	else
+	{
 		GPIO_ResetBits(GPIOC, GPIO_Pin_9);
+	}
 }
-static void ad5290_spi_cs2(unsigned char state)
+static void ad5290_spi_cs2(uint8_t state)
 {
 	if (state)
+	{
 		GPIO_SetBits(GPIOA, GPIO_Pin_12);
+	}
 	else
+	{
 		GPIO_ResetBits(GPIOA, GPIO_Pin_12);
+	}
 }
 
-void ad5290_init(void)
+int8_t ad5290_init(struct spi_bus_device *spi_bus)
 {	
 	GPIO_InitTypeDef GPIO_InitStructure;
 
+	if (NULL == spi_bus)
+	{
+		return -1;
+	}
+	
 	/* spi cs */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_GPIOC,ENABLE);
 
@@ -65,29 +77,33 @@ void ad5290_init(void)
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_SetBits(GPIOA, GPIO_Pin_12);
 	
-	/*device init*/
-	stm32f1xx_spi_init(0,0,&spi_bus1,8);/* 如spi总线已初始化，则不需重复初始化 */
-	
+	/* device init */
 	/* device 0 */
 	ad5290_spi_dev[0].spi_cs  = ad5290_spi_cs0;
-	ad5290_spi_dev[0].spi_bus = &spi_bus1;
+	ad5290_spi_dev[0].spi_bus = spi_bus;
+	
 	/* device 1 */
 	ad5290_spi_dev[1].spi_cs  = ad5290_spi_cs1;
-	ad5290_spi_dev[1].spi_bus = &spi_bus1;
+	ad5290_spi_dev[1].spi_bus = spi_bus;
+	
 	/* device 2 */
 	ad5290_spi_dev[2].spi_cs  = ad5290_spi_cs2;
-	ad5290_spi_dev[2].spi_bus = &spi_bus1;
+	ad5290_spi_dev[2].spi_bus = spi_bus;
+	
+	return 0;
 }
 
 /**
   * @brief  set resistance out
   * @param  \set_value limits from 0x00 to 0xff
   *			\index sensor num,1 or 2 or 3
-  * @retval None
+  * @retval none
   */
-void ad5290_set_out(u8 set_value,u8 index)
+void ad5290_set_out(uint8_t set_value, uint8_t index)
 {
-	if(index < 1 || index > 3)
+	if (index < 1 || index > 3)
+	{
 		return;
+	}
 	spi_send(&ad5290_spi_dev[index-1], &set_value, 1);
 }	

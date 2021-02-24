@@ -456,6 +456,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\driver\ad7684.c</FilePath>
             </File>
+            <File>
+              <FileName>ad5290.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\driver\ad5290.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -589,7 +594,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Outpu</GroupName>
+          <GroupName>Output</GroupName>
         </Group>
       </Groups>
     </Target>
