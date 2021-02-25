@@ -1,148 +1,227 @@
-#include  "tmc2660.h"
+/*
+ * File      : tmc2660.c
+ * 
+ * This file is part of tmc2660 driver for stm32f1xx.
+ * COPYRIGHT (C) 2019-
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2016-08-07     Acuity      first version.
+ */
+ 
+#include <string.h>
+#include "tmc2660.h"
 
-#define USE_TMC2660 1
-#if USE_TMC2660
+/* tmc2660 register */
+#define		REG_DRVCTRL			0x00000000
+#define		REG_CHOPCONF		0x00080000
+#define		REG_SMARTEN			0x000A0000
+#define		REG_SGCSCONF		0x000C0000
+#define		REG_DRVCONF			0x000E0000
 
-//µç»úspi¿ØÖÆÉè±¸
-static struct spi_dev_device	tmc2660_spi_dev[1];
-static struct spi_bus_device 	spi_bus0;
+/* register value */
+#define		MICROSTEP_256		0x00
+#define		MICROSTEP_128		0x01
+#define		MICROSTEP_64		0x02
+#define		MICROSTEP_32		0x03
+#define		MICROSTEP_16		0x04
+#define		MICROSTEP_8			0x05
+#define		MICROSTEP_4			0x06
+#define		MICROSTEP_2			0x07
+#define		MICROSTEP_1			0x08
 
-//Ä¬ÈÏÅäÖÃ
+/* é»˜è®¤é…ç½® */
 #define		SCG_DEFAULT			0x10000
 
-static void spi0_cs(unsigned char state)
+
+/* æ§åˆ¶IO */
+/* spi cs */
+#define		TMC2660_PORT_CS		GPIOA
+#define		TMC2660_GPIO_CS		GPIO_Pin_4		
+
+/* enable */
+#define		TMC2660_PORT_EN		GPIOC			
+#define		TMC2660_GPIO_EN		GPIO_Pin_4
+
+/* step */
+#define		TMC2660_PORT_STEP	GPIOB			
+#define		TMC2660_GPIO_STEP	GPIO_Pin_0
+
+/* dir */
+#define		TMC2660_PORT_DIR	GPIOC			
+#define		TMC2660_GPIO_DIR	GPIO_Pin_5	
+
+/* light sensor */
+#define	  	LIGHT_IN			GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8)					 
+#define		LIGHT_PORT			GPIOA
+#define		LIGHT_GPIO			GPIO_Pin_8
+
+/* tmc2660 spi device */
+static struct spi_dev_device	tmc2660_spi_dev[1];
+
+/* ç‰‡é€‰ä¿¡å· */
+static void spi_cs0(uint8_t state)
 {
     if (state)
-        GPIO_SetBits(TMC2660_PORTY_CS, TMC2660_GPIOY_CS);
+    {
+		GPIO_SetBits(TMC2660_PORT_CS, TMC2660_GPIO_CS);
+	}
     else
-        GPIO_ResetBits(TMC2660_PORTY_CS, TMC2660_GPIOY_CS);
+    {
+		GPIO_ResetBits(TMC2660_PORT_CS, TMC2660_GPIO_CS);
+	}
 }
 
-//tmc2660 spi
-static u32 tmc2660_spi_xfer(u8 spi_no,u32 write_data)
+/* ä½¿èƒ½æ§åˆ¶ */
+static void enable_ctrl(uint8_t state)
 {
-    u8 send_buff[3],recv_buff[3];
-    u32 recv_data= 0;
+    if (state)
+    {
+		GPIO_SetBits(TMC2660_PORT_EN, TMC2660_GPIO_EN);
+	}
+    else
+    {
+		GPIO_ResetBits(TMC2660_PORT_EN, TMC2660_GPIO_EN);
+	}
+}
+
+/* æ­¥è¿›æ§åˆ¶ */
+static void step_ctrl(uint8_t state)
+{
+    if (state)
+    {
+		GPIO_SetBits(TMC2660_PORT_STEP, TMC2660_GPIO_STEP);
+	}
+    else
+    {
+		GPIO_ResetBits(TMC2660_PORT_STEP, TMC2660_GPIO_STEP);
+	}
+}
+
+/* æ–¹å‘åˆ‡æ¢æ§åˆ¶ */
+static void dir_ctrl(uint8_t state)
+{
+    if (state)
+    {
+		GPIO_SetBits(TMC2660_PORT_DIR, TMC2660_GPIO_DIR);
+	}
+    else
+    {
+		GPIO_ResetBits(TMC2660_PORT_DIR, TMC2660_GPIO_DIR);
+	}
+}
+
+/* tmc2660 spiæ”¶å‘å‡½æ•° */
+static uint32_t tmc2660_spi_xfer(uint8_t spi_no,uint32_t write_data)
+{
+    uint8_t send_buff[3] = {0};
+	uint8_t recv_buff[3] = {0};
+    uint32_t recv_data= 0;
 	
     send_buff[0] = (write_data>>16)&0xff;
     send_buff[1] = (write_data>>8)&0xff;
     send_buff[2] = (write_data&0xff);
-    spi_send_recv(struct spi_dev_device * spi_dev, const void * send_buff, void * recv_buff, unsigned short data_size)(&tmc2660_spi_dev[spi_no],send_buff,recv_buff,3);
+    spi_send_recv(&tmc2660_spi_dev[spi_no], send_buff, recv_buff, 3);
     recv_data = recv_buff[0]<<16 | recv_buff[1]<<8 | recv_buff[2];
 		
     return (recv_data&0x0fffff);
 }
 
-//tmc2660 init
-void tmc2660_init(module_param_t *motor_param,u8 motor_index)
+/* tmc2660 åˆå§‹åŒ– */
+int8_t tmc2660_init(struct spi_bus_device *spi_bus)
 {		
 	GPIO_InitTypeDef GPIO_InitStructure;
 	
-	if(motor_index == YMOTOR)
+	if (NULL == spi_bus)
 	{
-		//spi io
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC,ENABLE);
-		//spi cs PA4
-		GPIO_InitStructure.GPIO_Pin = TMC2660_GPIOY_CS;
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-		GPIO_Init(TMC2660_PORTY_CS, &GPIO_InitStructure);
-		//device init
-		stm32f1xx_spi_init(&spi_bus0,8,0,0);   //µ÷ÓÃspi_core.hº¯Êı
-		tmc2660_spi_dev[0].spi_cs = spi0_cs;
-		tmc2660_spi_dev[0].spi_bus = &spi_bus0;
+		return -1;
+	}
 	
-		//enable 
-		GPIO_InitStructure.GPIO_Pin = TMC2660_GPIOY_EN;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     				
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		    		
-		GPIO_Init(TMC2660_PORTY_EN,&GPIO_InitStructure);
-		//step	
-		GPIO_InitStructure.GPIO_Pin = TMC2660_GPIOY_STEP;										
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     			//ÍÆÍìÊä³ö
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		    		
-		GPIO_Init(TMC2660_PORTY_STEP,&GPIO_InitStructure);
-		//dir  
-		GPIO_InitStructure.GPIO_Pin = TMC2660_GPIOY_DIR;										
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     				
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		    		
-		GPIO_Init(TMC2660_PORTY_DIR,&GPIO_InitStructure);
-						
-		//Ô­µã¹âµç¿ª¹Ø PB11
-		GPIO_InitStructure.GPIO_Pin =  SenseY_GPIO;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;							//ÉÏÀ­ÊäÈë
-		GPIO_Init(SenseY_PORT, &GPIO_InitStructure);
-				
-		TMC2660_OUTY_CS 	= 1;
-		TMC2660_OUTY_EN 	= 0;																		//enable
-		TMC2660_OUTY_DIR 	= 0;																		//Õı·´×ª¿ØÖÆ
-				
-		if(motor_param->max_cs)
-			tmc2660_spi_xfer(YMOTOR,REG_DRVCONF | 0X0010); 
-		else
-			tmc2660_spi_xfer(YMOTOR,REG_DRVCONF | 0X0050); //0X0010->305mV  0X0050->165mV Óëµç»úµçÁ÷Ïà¹Ø
-		tmc2660_spi_xfer(YMOTOR,REG_DRVCTRL | MICROSTEP_16);
-		tmc2660_spi_xfer(YMOTOR,0x901b4);	//0x94557
-		tmc2660_spi_xfer(YMOTOR,0xa0202);	//0xa0202->1/2CS 0xa8202->1/4CS 
-		tmc2660_spi_xfer(YMOTOR,REG_SGCSCONF | SCG_DEFAULT | 0x00);		//ºó5Î»ÎªµçÁ÷´óĞ¡
-		tmc2660_set_force(motor_param->freeforce_group[0],YMOTOR);
-		tmc2660_set_subdivide(motor_param->subdivide,YMOTOR);
-	}
-	else if(motor_index == ZMOTOR)
-	{	
-		
-	}
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC,ENABLE);
+	/* spi cs */
+	spi_cs0(0x01);
+	GPIO_InitStructure.GPIO_Pin = TMC2660_GPIO_CS;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(TMC2660_PORT_CS, &GPIO_InitStructure);
+	
+	/* device init */
+	tmc2660_spi_dev[0].spi_cs = spi_cs0;
+	tmc2660_spi_dev[0].spi_bus = spi_bus;
+
+	/* enable */
+	enable_ctrl(0x00);
+	GPIO_InitStructure.GPIO_Pin = TMC2660_GPIO_EN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     				
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		    		
+	GPIO_Init(TMC2660_PORT_EN,&GPIO_InitStructure);
+	
+	/* step	*/
+	GPIO_InitStructure.GPIO_Pin = TMC2660_GPIO_STEP;								
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;   		
+	GPIO_Init(TMC2660_PORT_STEP,&GPIO_InitStructure);
+	
+	/* dir */
+	enable_ctrl(0x00);
+	GPIO_InitStructure.GPIO_Pin = TMC2660_GPIO_DIR;										
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     				
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		    		
+	GPIO_Init(TMC2660_PORT_DIR,&GPIO_InitStructure);
+					
+	/* light */
+	GPIO_InitStructure.GPIO_Pin =  LIGHT_GPIO;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;			
+	GPIO_Init(LIGHT_PORT, &GPIO_InitStructure);
+	
+	/* 0X0010->305mV  0X0050->165mV ä¸ç”µæœºç”µæµç›¸å…³	*/													
+	//tmc2660_spi_xfer(MOTOR_INDEX_0, REG_DRVCONF | 0x0010); 
+	tmc2660_spi_xfer(MOTOR_INDEX_0 ,REG_DRVCONF | 0x0050); 
+	
+	tmc2660_spi_xfer(MOTOR_INDEX_0,REG_DRVCTRL | MICROSTEP_16);
+	tmc2660_spi_xfer(MOTOR_INDEX_0,0x901b4);	
+	tmc2660_spi_xfer(MOTOR_INDEX_0,0xa0202);/* 0xa0202->1/2CS 0xa8202->1/4CS */
+	tmc2660_spi_xfer(MOTOR_INDEX_0,REG_SGCSCONF | SCG_DEFAULT | 0x00);/* å5ä½ä¸ºç”µæµå¤§å° */
+	tmc2660_set_force(0x00, MOTOR_INDEX_0);		/* é»˜è®¤åŠ›çŸ© */
+	tmc2660_set_subdivide(0x04, MOTOR_INDEX_0); /* é»˜è®¤16ç»†åˆ† */
+	
+	return 0;
 }
 
-/***********************************************************
- * º¯ÊıÃû£ºtmc2660_move_onestep
- * ¹¦ÄÜ  £ºµç»ú¿ØÖÆ¶Ë¿Ú³õÊ¼»¯		  
- * ÊäÈë  : ÎŞ
- * Êä³ö  £ºÎŞ    
- ***********************************************************/
-void tmc2660_move_onestep(u8 direct,u8 motor_index)
+/* ç”µæœºè½¬åŠ¨æ–¹å‘ */
+void tmc2660_set_direct(uint8_t direct, uint8_t motor_index)
 {
-	if(motor_index == YMOTOR)
-	{
-		TMC2660_OUTY_DIR = direct;
-	}
-	else if(motor_index == ZMOTOR)
-	{
-		TMC2660_MOTORZ_DIR = direct;
-	}
+	dir_ctrl(direct);
 }
 
-//Éè¶¨µç»úÁ¦¾Ø
+/* ç”µæœºè½¬åŠ¨ä¸€æ­¥ */
+void tmc2660_move_step(uint8_t direct, uint8_t motor_index)
+{
+	/* å®šæ—¶å™¨ç¿»è½¬ioäº§ç”Ÿè„‰å†²è¾“å…¥stepå¼•è„šï¼Œä¸€ä¸ªè„‰å†²èµ°ä¸€æ­¥ */
+}
+
+/* è®¾å®šç”µæœºåŠ›çŸ© */
 void tmc2660_set_force(u8 force,u8 motor_index)
 {
-	u8 temp;
-	int cmd = 0;
+	uint8_t temp;
+	uint32_t cmd = 0;
 	
 	temp = force/8;
 	cmd = REG_SGCSCONF | SCG_DEFAULT | temp;
-	tmc2660_spi_xfer(motor_index,cmd);
+	tmc2660_spi_xfer(motor_index, cmd);
 }
 
-//»ñÈ¡Ô­µãÎ»
-char tmc2660_light_sw_state(u8 motor_index)
+/* è·å–åŸç‚¹ä½ */
+uint8_t tmc2660_light_sw_state(uint8_t motor_index)
 {
-	u8 status = 0;
-	if(motor_index == YMOTOR) 
-	{
-		status = Y_SENSE;
-	}
-	else if(motor_index == ZMOTOR)
-	{	
-			
-	}
-	return status;
+	return LIGHT_IN;
 }
 
-//ÉèÖÃtmc2660Ï¸·Ö
-void tmc2660_set_subdivide(char mode,u8 motor_index)
+/* è®¾ç½®tmc2660ç»†åˆ† */
+void tmc2660_set_subdivide(uint8_t mode, uint8_t motor_index)
 {
-	u8 	step = 0;
-	u32 cmd = 0;
+	uint8_t step = 0;
+	uint8_t cmd = 0;
 	
 	switch(mode)
 	{
@@ -181,11 +260,9 @@ void tmc2660_set_subdivide(char mode,u8 motor_index)
 	tmc2660_spi_xfer(motor_index,cmd);
 }
 	
-//»ñÈ¡tmc2660×´Ì¬ĞÅÏ¢
-u32 tmc2660_read_state(u8 motor_index)
+/* è·å–tmc2660çŠ¶æ€ä¿¡æ¯ */
+uint32_t tmc2660_read_state(uint8_t motor_index)
 {
-	tmc2660_spi_xfer(motor_index,0x00);
-	return 0;
+	return tmc2660_spi_xfer(motor_index, 0x00);
 }
 
-#endif

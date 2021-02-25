@@ -23,12 +23,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-//#include "dev_uart.h"
-//#include "bsp_uart.h"
 
-uint32_t g_DmaTxCount[2] = {0};
-uint32_t g_DmaRxCount[6] = {0};
-uint32_t g_DmaTxErrCount[4] = {0};
 
 /** @addtogroup Template_Project
   * @{
@@ -115,85 +110,6 @@ void SysTick_Handler(void)
 {
    
 }
-
-#if 0
-void USART1_IRQHandler(void)
-{
-	if(USART_GetITStatus(USART1, USART_IT_IDLE) != RESET)
-	{
-		uart_dmarx_idle_isr(DEV_UART1);
-		/* read the data to clear receive idle interrupt flag */
-		USART_ReceiveData(USART1);
-		//DMA_ClearFlag(DMA1_FLAG_GL5);
-		g_DmaRxCount[0]++;
-	}
-}
-
-void DMA1_Channel4_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_IT_TC4))
-	{
-		g_DmaTxCount[0]++;	
-		uart_dmatx_done_isr(DEV_UART1);
-		DMA_ClearFlag(DMA1_FLAG_TC4);
-        DMA_Cmd(DMA1_Channel4, DISABLE);
-	}
-}
-
-void DMA1_Channel5_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_IT_TC5))
-	{
-		g_DmaRxCount[1]++;
-		uart_dmarx_done_isr(DEV_UART1);
-		DMA_ClearFlag(DMA1_FLAG_TC5);
-	}
-	if(DMA_GetITStatus(DMA1_IT_HT5))
-	{
-		g_DmaRxCount[2]++;
-		uart_dmarx_half_done_isr(DEV_UART1);
-		DMA_ClearFlag(DMA1_FLAG_HT5);
-	}
-}
-
-void USART2_IRQHandler(void)
-{
-	if(USART_GetITStatus(USART2, USART_IT_IDLE) != RESET)
-	{
-		uart_dmarx_idle_isr(DEV_UART2);
-		/* read the data to clear receive idle interrupt flag */
-		USART_ReceiveData(USART2);
-		g_DmaRxCount[3]++;
-	}
-}
-
-void DMA1_Channel7_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_IT_TC7))
-	{
-		g_DmaTxCount[1]++;	
-		uart_dmatx_done_isr(DEV_UART2);
-		DMA_ClearFlag(DMA1_FLAG_TC7);
-        DMA_Cmd(DMA1_Channel7, DISABLE);
-	}
-}
-
-void DMA1_Channel6_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_IT_TC6))
-	{
-		g_DmaRxCount[4]++;
-		uart_dmarx_done_isr(DEV_UART2);
-		DMA_ClearFlag(DMA1_FLAG_TC6);
-	}
-	if(DMA_GetITStatus(DMA1_IT_HT6))
-	{
-		g_DmaRxCount[5]++;
-		uart_dmarx_half_done_isr(DEV_UART2);
-		DMA_ClearFlag(DMA1_FLAG_HT6);
-	}
-}
-#endif
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */
