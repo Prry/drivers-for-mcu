@@ -8,65 +8,68 @@
  * Date           Author       Notes
  * 2016-10-22     Acuity	first version.
  * 2017-03-27     Acuity	Add 16bit address for eeprom,to test at24c64. 
- * 2017-05-09     Acuity	ĞŞ¸ÄÒ³Ğ´Ëã·¨.
+ * 2017-05-09     Acuity	ä¿®æ”¹é¡µå†™ç®—æ³•.
  *
  * Depend on:
  * i2c_core.c,i2c_hw.c
  *
  * Note:
- * 24c04 24c08 24c16 µØÖ·Îª8Î»£¬³¬¹ı0xffµØÖ·ºó£¬×¢ÒâÒ³µÄÑ¡Ôñ¶ÁĞ´
- * 24c32 ¼°ÒÔÉÏµØÖ·Îª16Î»
- * EEPROM Ò³¶ÁĞ´ĞèÒª×÷Ó¦´ğ²éÑ¯»ò×÷¶ÌÔİÑÓÊ±ÒÔµÈ´ıÊı¾İĞ´ÈëÍê³É£»FM24CLXXÔò²»ĞèÒª
+ * 24c04 24c08 24c16 åœ°å€ä¸º8ä½ï¼Œè¶…è¿‡0xffåœ°å€åï¼Œæ³¨æ„é¡µçš„é€‰æ‹©è¯»å†™
+ * 24c32 åŠä»¥ä¸Šåœ°å€ä¸º16ä½
+ * eeprm é¡µå†™éœ€è¦ä½œåº”ç­”æŸ¥è¯¢æˆ–ä½œçŸ­æš‚å»¶æ—¶ä»¥ç­‰å¾…æ•°æ®å†™å…¥å®Œæˆï¼›fm24CLXXåˆ™ä¸éœ€è¦ï¼Œå› ä¸ºå†™å…¥é€Ÿåº¦å¿«
  */
  
-
-#define USE_24CLXX_EN 		1
 #define USE_24CLXX_DEBUG 	0
 
-
-#if USE_24CLXX_EN
-#include "i2c_core.h"
+#include <string.h>
 #include "i2c_hw.h"
 #include "24clxx.h"	
 
-//eeprom/fram ²ÎÊı
-#define		EEPROM_TYPE				0			//0->EEPROM 1->FRAM
-#define		EEPROM_MODEL			16			//EEPROM ÀàĞÍ 24c16
-#define 	EE24CLXX_SLAVE_ADDR   	0x50		//×¢Òâ¶ÁĞ´Î»£¬Êµ¼ÊµØÖ·Îª0x50
-#define 	EE24CLXX_PAGESIZE       16			//AT24C16Ã¿Ò³ÓĞ16¸ö×Ö½Ú   24C02->8
+/* eeprom/fram å‚æ•° */
+#define	EEPROM_TYPE			(0)		/* 0->EEPROM 1->FRAM */
+#define	EEPROM_MODEL		(16u)	/* EEPROMç±»å‹:24c16 */
+#define EE24CLXX_SLAVE_ADDR (0x50)	/* æ³¨æ„è¯»å†™ä½ï¼Œå®é™…åœ°å€ä¸º0x50 */
+#define EE24CLXX_PAGESIZE   (16u)	/* at24C16æ¯é¡µæœ‰16ä¸ªå­—èŠ‚ */   
 
-static void I2C_24CLXXWaitStandby(u8 slave_addr);
+/* i2c bus device */
+struct i2c_dev_device *ee_i2c_dev = NULL;
 
-//Ò³Ğ´ÑÓÊ±£¬FRAM²»ÓÃ
-static void I2C_24CLXXWaitStandby(u8 slave_addr) 
+/* é¡µå†™å»¶æ—¶ï¼Œframä¸ç”¨ */
+static void i2c_24clxx_wait(void) 
 {
 #if EEPROM_TYPE
 	
 #else
-	u16 i;
-	i = 0xFFFF;
+	uint16_t i = 0xffff;
+	
 	while (i--);
 #endif
 }
 
-//Ğ´¶à×Ö½Ú£¬ĞèÈ·±£µ±Ç°Ğ´µØÖ·+Ğ´ÈëÊı¾İ³¤¶È²»ÄÜ³¬¹ıEEPROMµÄÒ»Ò³
-static void i2c_24clxx_write( u16 write_addr, char* pbuffer,u16 write_size)
+/**
+  * @brief  å†™å¤šå­—èŠ‚ï¼Œç¡®ä¿å½“å‰å†™åœ°å€+å†™å…¥æ•°æ®é•¿åº¦ä¸èƒ½è¶…è¿‡eepromçš„ä¸€é¡µ
+  * @param  
+  * @retval none
+  */
+static char i2c_24clxx_write(uint16_t write_addr, char *pbuff, uint16_t write_size)
 {
 	struct i2c_dev_message ee24_msg[2];
-	u8	buf[2];
-	u8  slave_addr;
+	uint8_t	buf[2] = {0};
+	uint8_t slave_addr = 0;
 
-	//if(write_addr+write_size > EE24CLXX_PAGESIZE)
-	//		return;
-	if(EEPROM_MODEL > 16)
-	{//´óÓÚ2k×Ö½ÚÊ±£¬µØÖ·Îª16Î»£º24c16¼°ÒÔÉÏ
+	if(write_addr+write_size > EE24CLXX_PAGESIZE)
+	{
+		return -1;
+	}
+	if (EEPROM_MODEL > 16)
+	{/* å®¹é‡å¤§äº2kå­—èŠ‚æ—¶ï¼Œä¸º16ä½å¯»å€;24c32 - 24c1024 */
 		slave_addr = EE24CLXX_SLAVE_ADDR;
 		buf[0] = (write_addr >>8)& 0xff;
 		buf[1] = write_addr & 0xff;
 		ee24_msg[0].size  = 2;
 	}
 	else
-	{//24c01¡ª¡ª24c16
+	{/* å°å®¹é‡;24c01 - 24c16 */
 		slave_addr = EE24CLXX_SLAVE_ADDR | (write_addr>>8);
 		buf[0] = write_addr & 0xff;
 		ee24_msg[0].size  = 1;
@@ -75,73 +78,96 @@ static void i2c_24clxx_write( u16 write_addr, char* pbuffer,u16 write_size)
 	ee24_msg[0].flags = I2C_BUS_WR;
 	ee24_msg[0].buff  = buf;
 	ee24_msg[1].addr = slave_addr;
-	ee24_msg[1].flags = I2C_BUS_WR  | I2C_BUS_NO_START;	//
-	ee24_msg[1].buff  = (u8*)pbuffer;
+	ee24_msg[1].flags = I2C_BUS_WR  | I2C_BUS_NO_START;
+	ee24_msg[1].buff  = (uint8_t*)pbuff;
 	ee24_msg[1].size  = write_size;
-	i2c_bus_xfer(&i2c1_dev,ee24_msg,2);
+	i2c_bus_xfer(ee_i2c_dev, ee24_msg, 2);
+	
+	return write_size;
 }
 
-/*******************************************************
-**
-**											 Íâ²¿º¯Êı
-**
-*******************************************************/
+/**
+  * @brief åˆå§‹åŒ–
+  * @param i2cæ€»çº¿è®¾å¤‡
+  * @retval none
+  */
+int8_t ee_24clxx_init(struct i2c_dev_device *i2c_bus)
+{
+	if (NULL == i2c_bus)	
+	{
+		return -1;
+	}
+	ee_i2c_dev = i2c_bus;
+	
+	return 0;
+}
 
-//Ğ´Ò»×Ö½Ú
-char ee_24clxx_writebyte(u16 addr,u8 data)
+/**
+  * @brief å†™1å­—èŠ‚
+  * @param  
+  * @retval none
+  */
+char ee_24clxx_writebyte(uint16_t write_addr, uint8_t data)
 {
 	struct i2c_dev_message ee24_msg[1];
-	u8	buf[3];
-	u8  slave_addr;
+	uint8_t buf[3] = {0};
+	uint8_t slave_addr = 0;
 	
 	if(EEPROM_MODEL > 16)
-	{//´óÓÚ2k×Ö½ÚÊ±£¬µØÖ·Îª16Î»
+	{
 		slave_addr = EE24CLXX_SLAVE_ADDR;
-		buf[0] = (addr >>8)& 0xff;   //¸ßÎ»µØÖ·ÔÚÇ°
-		buf[1] = addr & 0xff;
+		buf[0] = (write_addr >>8)& 0xff;   /* é«˜ä½åœ°å€åœ¨å‰ */
+		buf[1] = write_addr & 0xff;
 		buf[2] = data;
 		ee24_msg[0].size  = 3;
 	}
 	else
 	{
-		slave_addr = EE24CLXX_SLAVE_ADDR | (addr>>8);
-		buf[0] = addr & 0xff;
+		slave_addr = EE24CLXX_SLAVE_ADDR | (write_addr>>8);
+		buf[0] = write_addr & 0xff;
 		buf[1] = data;
 		ee24_msg[0].size  = 2;
 	}
 	ee24_msg[0].addr = slave_addr;
 	ee24_msg[0].flags = I2C_BUS_WR;
 	ee24_msg[0].buff  = buf;
-	i2c_bus_xfer(&i2c1_dev,ee24_msg,1);	
+	i2c_bus_xfer(ee_i2c_dev,ee24_msg,1);	
+	
 	return 0;
 }
 
-//Ğ´¶à×Ö½Ú£¬´øÒ³Ğ´Ëã·¨
-char ee_24clxx_writebytes(u16 write_addr, char* pwrite_buff, u16 writebytes)
-{//20170509
-	u8   write_len,page_offset;
+/**
+  * @brief ä»»æ„åœ°å€å¼€å§‹å†™å¤šå­—èŠ‚ï¼Œå¸¦é¡µå†™ç®—æ³•
+  * @param  
+  * @retval none
+  */
+char ee_24clxx_writebytes(uint16_t write_addr, char *pbuff, uint16_t write_size)
+{
 	char error = 0;
-	u16  check_writes,check_addr;
+	uint8_t write_len = 0;
+	uint8_t page_offset = 0;
+	uint16_t check_writes = 0;
+	uint16_t check_addr = 0;
 	char *check_buf;
 	
-	check_writes= writebytes;
+	check_writes= write_size;
 	check_addr  = write_addr;
-	check_buf   = pwrite_buff;
-	while(writebytes > 0)
+	check_buf   = pbuff;
+	while(write_size > 0)
 	{
 		page_offset = EE24CLXX_PAGESIZE - (write_addr & (EE24CLXX_PAGESIZE-1));//write_current_addr%EE24CLXX_PageSize
-		write_len   = writebytes > page_offset ? page_offset : writebytes;
-		i2c_24clxx_write(write_addr,pwrite_buff, write_len);
-		writebytes   = writebytes - write_len;
-		if(writebytes > 0)
+		write_len = write_size > page_offset ? page_offset : write_size;
+		i2c_24clxx_write(write_addr, pbuff, write_len);
+		write_size   = write_size - write_len;
+		if(write_size > 0)
 		{
-			pwrite_buff = pwrite_buff + write_len;
+			pbuff = pbuff + write_len;
 			write_addr  = write_addr + write_len;
-			I2C_24CLXXWaitStandby(0);
+			i2c_24clxx_wait();
 		}
 	}
-	I2C_24CLXXWaitStandby(0);
-	{//Ğ£ÑéÊı¾İ
+	i2c_24clxx_wait();
+	{/* æ ¡éªŒæ•°æ®(éå¿…è¦) */
 		int i;
 		char checkdata;
 			
@@ -150,32 +176,37 @@ char ee_24clxx_writebytes(u16 write_addr, char* pwrite_buff, u16 writebytes)
 			ee_24clxx_readbytes(check_addr+i,&checkdata,1);	
 			if(checkdata != check_buf[i])
 			{
-				error = 1;
+				error = -1;
 				break;
 			}
 		}
 	}
+	
 	return error;
 }
 
-//¶Á¶à×Ö½Ú£¬Á¬Ğø¶Á
-void ee_24clxx_readbytes(u16 read_ddr, char* pbuffer, u16 read_size)
+/**
+  * @brief ä»»æ„åœ°å€å¼€å§‹è¯»å¤šå­—èŠ‚
+  * @param  
+  * @retval none
+  */
+void ee_24clxx_readbytes(uint16_t read_addr, char* pbuff, uint16_t read_size)
 {  
 	struct i2c_dev_message ee24_msg[2];
-	u8	buf[2];
-	u8  slave_addr;
+	uint8_t	buf[2] = {0};
+	uint8_t slave_addr = 0;
 	
 	if(EEPROM_MODEL > 16)
-	{//´óÓÚ2k×Ö½ÚÊ±£¬µØÖ·Îª16Î»
+	{
 		slave_addr = EE24CLXX_SLAVE_ADDR;
-		buf[0] = (read_ddr >>8)& 0xff;
-		buf[1] = read_ddr & 0xff;
+		buf[0] = (read_addr >>8)& 0xff;
+		buf[1] = read_addr & 0xff;
 		ee24_msg[0].size  = 2;
 	}
 	else
 	{
-		slave_addr = EE24CLXX_SLAVE_ADDR | (read_ddr>>8);
-		buf[0] = read_ddr & 0xff;
+		slave_addr = EE24CLXX_SLAVE_ADDR | (read_addr>>8);
+		buf[0] = read_addr & 0xff;
 		ee24_msg[0].size  = 1;
 	}
 	ee24_msg[0].buff  = buf;
@@ -183,56 +214,67 @@ void ee_24clxx_readbytes(u16 read_ddr, char* pbuffer, u16 read_size)
 	ee24_msg[0].flags = I2C_BUS_WR;
 	ee24_msg[1].addr  = slave_addr;
 	ee24_msg[1].flags = I2C_BUS_RD;
-	ee24_msg[1].buff  = (u8*)pbuffer;
+	ee24_msg[1].buff  = (uint8_t*)pbuff;
 	ee24_msg[1].size  = read_size;
-	i2c_bus_xfer(&i2c1_dev,ee24_msg,2);
+	i2c_bus_xfer(ee_i2c_dev,ee24_msg,2);
 }
 
-//²Á³ıEEPROM
-char ee_24clxx_erasebytes(u16 WriteAddr, char Erasedata, u16 NumByteToErase)
+/**
+  * @brief æ“¦é™¤eeprom
+  * @param  
+  * @retval none
+  */
+char ee_24clxx_erasebytes(uint16_t erase_addr, char erase_data, uint16_t erase_size)
 {
 	char error = 0;
-	u16 i;
-	//char *buff;
-	char buff[2048];	//²âÊÔÓÃ£¬Êµ¼ÊÊ¹ÓÃĞè¶¯Ì¬·ÖÅäÄÚ´æ
-		
-	//buff = (char*)malloc(2048);
-	for(i = 0;i < NumByteToErase;i++)
+	uint16_t i = 0;
+#if 1
+	char buff[2048]; /* æµ‹è¯•ç”¨ï¼Œå®é™…ä½¿ç”¨æ³¨æ„å †æ ˆæº¢å‡ºï¼Œå»ºè®®ç”¨å †å†…å­˜ */
+#else
+	char *buff = NULL;
+#endif
+
+#if 0	
+	buff = (char*)malloc(2048);
+#endif
+	for(i = 0;i < erase_size;i++)
 	{
-		buff[i] = Erasedata;
+		buff[i] = erase_size;
 	}
-	error = ee_24clxx_writebytes(WriteAddr,buff,NumByteToErase);				
-	//free(buff);
+	error = ee_24clxx_writebytes(erase_addr, buff, erase_size);	
+#if 0		
+	free(buff);
+#endif
 	return error;
 }
 
-//eeprom test
+/* eeprom test */
 #if USE_24CLXX_DEBUG
-#define		WRSIZE				2048
-#define 	EEP_Firstpage      	0
-char I2c_Buf_Write[WRSIZE];
-char I2c_Buf_Read[WRSIZE];
-void EE24CLXX_Test(void)
+#define	 WR_SIZE   2048
+#define  WR_ADDR   0
+char w_buff[WR_SIZE];
+char r_buff[WR_SIZE];
+void ee24clxx_test(void)
 {
-	u16 i,error = 0;
+	uint16_t i = 0;
+	char error = 0;
 			
-	for ( i=0; i<WRSIZE; i++ ) //Ìî³ä»º³å
+	for (i=0; i<WR_SIZE; i++ ) /* å¡«å……ç¼“å†² */
 	{   
-		I2c_Buf_Write[i] = i;   
+		w_buff[i] = i;   
 	}
-	ee_24clxx_readbytes(EEP_Firstpage, I2c_Buf_Read, WRSIZE); 
-	ee_24clxx_readbytes(EEP_Firstpage, I2c_Buf_Read, WRSIZE);
-	error = ee_24clxx_writebytes(EEP_Firstpage, I2c_Buf_Write, WRSIZE);	 
-	Delayms(5);
-	ee_24clxx_readbytes(EEP_Firstpage, I2c_Buf_Read, WRSIZE); 
+	ee_24clxx_readbytes(WR_ADDR, r_buff, WR_SIZE); 
+	ee_24clxx_readbytes(WR_ADDR, r_buff, WR_SIZE);
+	error = ee_24clxx_writebytes(WR_ADDR, w_buff, WR_SIZE);	 
+	
+	ee_24clxx_readbytes(WR_ADDR, r_buff, WR_SIZE); 
 
-	for ( i=0; i<WRSIZE; i++ ) //Ìî³ä»º³å 
-		I2c_Buf_Write[i] = 0;   
-	error = ee_24clxx_writebytes(EEP_Firstpage, I2c_Buf_Write, WRSIZE);
-	Delayms(5);		
-	ee_24clxx_readbytes(EEP_Firstpage, I2c_Buf_Read,WRSIZE); 
-	//while(error);
+	for ( i=0; i<WR_SIZE; i++ )  
+	{
+		w_buff[i] = 0;   
+	}
+	error = ee_24clxx_writebytes(WR_ADDR, w_buff, WR_SIZE);
+	
+	ee_24clxx_readbytes(WR_ADDR, r_buff, WR_SIZE); 
 }
-#endif
-
 #endif

@@ -466,6 +466,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\driver\tmc2660.c</FilePath>
             </File>
+            <File>
+              <FileName>24clxx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\driver\24clxx.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

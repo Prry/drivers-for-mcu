@@ -1,9 +1,14 @@
+
 #include "i2c_core.h"
 #include "i2c_bitops.h"
 #include "i2c_hw.h"
 
 /********************eg: stm32f1 simulate i2c start*******************/
- 
+#define	I2C1_SDA_PORT	GPIOB
+#define	I2C1_SCL_PORT	GPIOB
+#define	I2C1_SDA_PIN	GPIO_Pin_7
+#define	I2C1_SCL_PIN	GPIO_Pin_6
+
 /* i2c1 device */
 struct i2c_dev_device i2c1_dev;
 struct ops_i2c_dev ops_i2c1_dev;  
@@ -64,7 +69,7 @@ int ops_i2c_bus_xfer(struct i2c_dev_device *i2c_dev,struct i2c_dev_message msgs[
 }
 
 /* ³õÊ¼»¯i2cÇý¶¯ */
-void stm32f1xx_i2c_init(void)
+void stm32f1xx_i2c_init(struct i2c_dev_device *i2c_bus)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;										
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);		
@@ -76,14 +81,14 @@ void stm32f1xx_i2c_init(void)
 	I2C1_SDA_PORT->BSRR = I2C1_SDA_PIN;											
 	I2C1_SCL_PORT->BSRR = I2C1_SCL_PIN;
 		
-	//device init
+	/* device init */
 	ops_i2c1_dev.set_sda = gpio_set_sda;
 	ops_i2c1_dev.get_sda = gpio_get_sda;
 	ops_i2c1_dev.set_scl = gpio_set_scl;
 	ops_i2c1_dev.get_scl = gpio_get_scl;
 	ops_i2c1_dev.delayus = gpio_delayus;
 			
-	i2c1_dev.i2c_phy	 = &ops_i2c1_dev;
-	i2c1_dev.xfer		 = ops_i2c_bus_xfer; 
+	i2c_bus->i2c_phy	 = &ops_i2c1_dev;
+	i2c_bus->xfer		 = ops_i2c_bus_xfer; 
 }
 /********************eg: stm32f1 simulate i2c end*******************/
