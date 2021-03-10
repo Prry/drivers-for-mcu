@@ -24,15 +24,16 @@ Onewire | 模拟单总线 | IO模拟
 
 外设 | 型号 | 原厂 | 接口 | 备注  
 --- | --- | --- | --- | --- 
-温度传感器 | LM75A	| NXP	| I2C	  
-LED恒流驱动 | LP55231 | TI | I2C  	
-EEPROM/FRAM | AT24Cxx | ATMEL | I2C  	
-EEPROM | ST25AAXX | ST | SPI  	
+温度传感器 | LM75A	| NXP	| I2C	  |
+LED恒流驱动 | LP55231 | TI | I2C  	|
+EEPROM/FRAM | AT24Cxx | ATMEL | I2C  	|
+EEPROM | ST25AAXX | ST | SPI  	|
 ADC | AD7684 | ADI | SPI | 3线SPI    
-步进电机驱动 | TMC2660 | TRINAMIC | SPI
+步进电机驱动 | TMC2660 | TRINAMIC | SPI|
 温度传感器 | DS18B20 | MAXIM | Onewire|    
 DAC | AD5290 | ADI | SPI | 3线SPI   	
-三轴加速度传感器 | LIS3DH | ST | I2C  
+三轴加速度传感器 | LIS3DH | ST | I2C  |
+热电阻/热电偶驱动芯片 | AD7793 | ADI | SPI |
 
 4.更新
 -

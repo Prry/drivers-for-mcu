@@ -471,6 +471,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\driver\24clxx.c</FilePath>
             </File>
+            <File>
+              <FileName>ad7793.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\driver\ad7793.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
