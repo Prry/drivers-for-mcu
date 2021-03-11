@@ -1,9 +1,20 @@
 
+/*
+ * File      : ad7793.c
+ * 
+ * This file is part of ad7793 driver for for stm32f1xx.
+ * COPYRIGHT (C) 2016-
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2021-03-09     Acuity      first version.
+ */
+ 
 #include <string.h>
 #include "stm32f10x.h"
 #include "ad7793.h"
 
-/* ad7793寄存器 */
+/* 寄存器 */
 #define REG_COMM_STA	0x00	 /* 8bit,写时为通讯寄存器/读时为状态寄存器 */  
 #define REG_MODE		0x08	 /* 16bit,模式寄存器 */
 #define REG_CONFIG		0x10	 /* 16bit,配置寄存器 */
@@ -13,13 +24,21 @@
 #define	REG_IMBL		0x30	 /* 24bit,失调寄存器 */
 #define	REG_FULL		0x38	 /* 24bit,满量程寄存器 */
 
-/* ad7793读写指令 */
+/* 读写指令 */
 #define READ_EN			0x40	 /* 读使能 */
-#define	SINGLE_CONVER	0x2000	 /* 单次转换 */
-#define	CONTINUE_CONVER	0x00	 /* 连续转换 */
 #define	CONTINUE_READ	0x20	 /* 连续读 */
 
-/* 恒流源控制 */
+/* 工作模式配置 */
+#define	CONTINUE_CONVER	0x0000	 /* 连续转换,默认 */
+#define	SINGLE_CONVER	0x2000	 /* 单次转换 */
+#define	IDLE_MODE	    0x4000	 /* 空闲模式 */
+#define	LOW_POWER_MODE	0x6000	 /* 省电模式 */
+#define	IZL_CALIBRATION	0x8000	 /* 内部零电平校准 */
+#define	IFC_CALIBRATION	0xA000	 /* 内部满量程校准 */
+#define	SZL_CALIBRATION	0xC000	 /* 系统零电平校准 */
+#define	SFC_CALIBRATION	0xE000	 /* 系统满量程校准 */
+
+/* 恒流源配置 */
 #define CURRENT_OUT1_1	0x00	/* 两路电流正常输出到IO1、IO2 */
 #define CURRENT_OUT1_2	0x04	/* 两路电流输出IO1、IO2互换 */
 #define CURRENT_OUT1	0x08	/* 两路电流叠加输出到IO1，只对10uA和210uA有效 */
@@ -28,7 +47,7 @@
 #define CURRENT_210UA	0x02	/* 210uA电流 */
 #define CURRENT_1MA	    0x03	/* 1mA电流 */
 
-/* 配置寄存值 */
+/* 放大器配置 */
 #define	BIPOLAR		0x0000	 /* 双极性 */
 #define	UNIPOLAR	0x1000	 /* 单极性 */
 #define GAIN_1      0x0000	 /* 增益1~128 */
@@ -40,9 +59,9 @@
 #define GAIN_64     0x0600	   
 #define GAIN_128    0x0700	 
 
+/* ADC配置 */
 #define OUTER_VREF  0x0000	 /* 外部参考源 */
 #define INNER_VREF  0x0080 	 /* 内部参考源 */
-
 #define NO_BUF		0x0000	 /* 无缓存 */
 #define USE_BUF		0x0010	 /* 使用缓存 */
 #define AIN_CH1     0x0000	 /* 检测通道1~3 */
@@ -73,7 +92,7 @@ static struct _ad7793_info s_ad7793_info =
 {
 	.mode = MODE_BIPOLAR|MODE_4LINE_RTD,/* 双精度/4线RTD */
 	.ref = 2000,	/* 2kΩ */
-	.gain = GAIN_1,
+	.gain = GAIN_1, /* no gain */
 };
 
 static void ad7793_spi_cs(uint8_t state)
@@ -144,7 +163,7 @@ static void ad7793_register_init(void)
 	/* read chip id */
 	ad7793_spi_read(REG_ID, &s_ad7793_info.id, 1);
 	
-	/* 65db抑 */
+	/* 65db抑制 */
   	ad7793_spi_write_word(REG_MODE, 0x000A);
 
 	if (s_ad7793_info.mode&MODE_UNIPOLAR)
@@ -180,7 +199,7 @@ int8_t ad7793_read_data(int32_t *ad_value)
 	if (0xbf == (temp|0xbf))
 	{
 		ad7793_spi_read(REG_DATA|READ_EN, &buf[0] ,3);
-		*ad_value = (buf[0]<<16) | (buf[1]<<8) | buf[2];
+		*ad_value = ((buf[0]<<16) | (buf[1]<<8) | buf[2])&0xffffff;
 	}
 	else
 	{
@@ -200,18 +219,12 @@ int8_t ad7793_init(struct spi_bus_device *spi_bus)
 	}
 	
     /* spi cs */ 
-	GPIO_SetBits(GPIOA, GPIO_Pin_1);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA ,ENABLE);
+	GPIO_SetBits(GPIOA, GPIO_Pin_1);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;  
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_SetBits(GPIOA,GPIO_Pin_11);
 	
     /* device init */
     ad7793_spi_dev[0].spi_cs  = ad7793_spi_cs;
